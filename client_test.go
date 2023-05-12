@@ -2,7 +2,9 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -37,8 +39,45 @@ func TestClientCanHitAPI(t *testing.T) {
 				Timeout: 1 * time.Second,
 			}),
 		)
-
 		assert.Equal(t, "my-test-url", myClient.apiURL)
 		assert.Equal(t, 1 * time.Second, myClient.httpClient.Timeout)
+	})
+
+	t.Run("Happy test - able to hit locally running test server", func (t *testing.T) {
+		ts := httptest.NewServer(
+			http.HandlerFunc(
+				func(w http.ResponseWriter, r *http.Request) {
+					fmt.Fprintf(w, `{"name": "pikachu", "height": 10}`)
+				},
+			),
+		)
+		defer ts.Close()
+
+		myClient := NewClient(
+			WithApiURL(ts.URL),
+		)
+
+		poke, err := myClient.GetPokemonByName(context.Background(), "pikachu")
+		assert.NoError(t, err)
+		assert.Equal(t, 10, poke.Height)
+	})
+
+	t.Run("Sad test - able to handle server errors", func (t *testing.T) {
+		ts := httptest.NewServer(
+			http.HandlerFunc(
+				func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusInternalServerError)
+				},
+			),
+		)
+		defer ts.Close()
+
+		myClient := NewClient(
+			WithApiURL(ts.URL),
+		)
+
+		poke, err := myClient.GetPokemonByName(context.Background(), "pikachu")
+		assert.Error(t, err)
+		assert.Equal(t, 0, poke.Height)
 	})
 }
