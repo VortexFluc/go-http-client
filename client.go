@@ -1,8 +1,16 @@
 package client
 
+import "net/http"
+
 type Client struct {
+	httpClient *http.Client
 }
 
 func NewClient() *Client {
-	return &Client{}
+
+	client := &Client{
+		httpClient: http.DefaultClient,
+	}
+
+	return client
 }
