@@ -16,7 +16,7 @@ func (c *Client) GetPokemonByName(
 	req, err := http.NewRequestWithContext(
 		ctx,
 		http.MethodGet,
-		"https://pokeapi.co/api/v2/pokemon/"+pokemonName,
+		c.apiURL + "/api/v2/pokemon/" + pokemonName,
 		nil,
 	)
 	// If creation of http request is not OK - return empty Pokemon and error
